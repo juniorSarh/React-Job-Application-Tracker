@@ -1,22 +1,14 @@
 import { Link } from "react-router-dom";
 import React from "react";
-
-// Swap these with your own assets (or keep as placeholders)
 import hero from "../images/LandingImage.png"; // <— hero image
+import NavBar from "../components/NavBar";
+
 
 export default function Landing() {
   return (
     <div className="landing">
       {/* Top bar */}
-      <header className="landing__topbar">
-        <span className="landing__brand">Job App Tracker</span>
-
-        {/* <div className="landing__avatar" aria-label="Profile">
-         
-          <img src={avatar} alt="" />
-        </div> */}
-      </header>
-
+      <NavBar />
       {/* Main content */}
       <main className="landing__main">
         <section className="landing__copy">
