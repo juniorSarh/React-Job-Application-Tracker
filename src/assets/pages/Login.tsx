@@ -6,10 +6,8 @@ import loginimg from "../images/loginimg.png";
 type AuthUser = { id: number | string; username: string };
 
 // Prefer env, fall back to localhost:3001 (keep React/Vite dev server on a different port)
-const API_BASE =
-  // Vite
-  (import.meta as any).env?.VITE_API_URL ||
-  "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
 
 export default function Login() {
   const nav = useNavigate();
@@ -35,8 +33,6 @@ export default function Login() {
     try {
       const parsed: AuthUser = JSON.parse(saved);
 
-      // Optional: validate session against json-server
-      // If you don’t care to validate, you can just nav("/home") here.
       fetch(`${API_BASE}/users/${encodeURIComponent(String(parsed.id))}`, {
         signal: controller.signal,
       })
@@ -99,7 +95,7 @@ export default function Login() {
           } satisfies AuthUser)
         );
 
-        // Remember username if checked
+       
         if (remember) localStorage.setItem("remember_username", u);
         else localStorage.removeItem("remember_username");
 
