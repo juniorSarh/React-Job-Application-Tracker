@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { FaSearch, FaSignOutAlt } from "react-icons/fa";
+import JobList from "../components/Jobslist";
 
 export default function Home() {
   const nav = useNavigate();
@@ -43,8 +44,14 @@ export default function Home() {
         <p>This is your dashboard after login.</p>
 
         <button>
-          Add a Job
+          {" "}
+          <Link to="/jobform"> Add a Job</Link>
         </button>
+
+        <main className="home__content">
+          <h1 className="home__h1">Jobs</h1>
+          <JobList />
+        </main>
       </main>
 
       <footer className="home__footer" />

@@ -94,6 +94,7 @@ export default function Login() {
             username: user.username,
           } satisfies AuthUser)
         );
+        console.log(`Logged in as ${user.username}`)
 
        
         if (remember) localStorage.setItem("remember_username", u);
