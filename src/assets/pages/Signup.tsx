@@ -38,7 +38,7 @@ export default function Signup() {
 
       // check if email already exists
       const existsRes = await fetch(
-        `http://localhost:3001/users?email=${encodeURIComponent(email)}`
+        `http://localhost:3000/users?email=${encodeURIComponent(email)}`
       );
       const existing = await existsRes.json();
       if (Array.isArray(existing) && existing.length > 0) {
@@ -47,7 +47,7 @@ export default function Signup() {
       }
 
       // create user (username = email for simpler login)
-      const createRes = await fetch("http://localhost:3001/users", {
+      const createRes = await fetch("http://localhost:3000/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,8 +64,8 @@ export default function Signup() {
         return;
       }
 
-      // redirect to login
-      nav("/login");
+      // redirect to home
+      nav("/home");
     } catch {
       setError("Unable to reach the server. Is json-server running?");
     } finally {

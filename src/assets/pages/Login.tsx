@@ -1,28 +1,72 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import NavBar from "../components/NavBar";
 import loginimg from "../images/loginimg.png";
 
+type AuthUser = { id: number | string; username: string };
 
-import NavBar from "../components/NavBar";
+// Prefer env, fall back to localhost:3001 (keep React/Vite dev server on a different port)
+const API_BASE =
+  // Vite
+  (import.meta as any).env?.VITE_API_URL ||
+  "http://localhost:3000";
 
 export default function Login() {
   const nav = useNavigate();
-  const [username, setUsername] = useState(
-    localStorage.getItem("remember_username") || ""
+
+  const rememberedUsername = useMemo(
+    () => localStorage.getItem("remember_username") || "",
+    []
   );
+
+  const [username, setUsername] = useState(rememberedUsername);
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(
-    localStorage.getItem("remember_username") ? true : false
-  );
+  const [remember, setRemember] = useState(!!rememberedUsername);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 1) Auto-redirect if a valid session already exists
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const saved = localStorage.getItem("auth_user");
+    if (!saved) return;
+
+    try {
+      const parsed: AuthUser = JSON.parse(saved);
+
+      // Optional: validate session against json-server
+      // If you don’t care to validate, you can just nav("/home") here.
+      fetch(`${API_BASE}/users/${encodeURIComponent(String(parsed.id))}`, {
+        signal: controller.signal,
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((user) => {
+          if (user && user.id != null) {
+            nav("/home", { replace: true });
+          } else {
+            // Stale session — clear it so the user can log in again
+            localStorage.removeItem("auth_user");
+          }
+        })
+        .catch(() => {
+          // On network error, keep user on login page.
+        });
+    } catch {
+      localStorage.removeItem("auth_user");
+    }
+
+    return () => controller.abort();
+  }, [nav]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!username.trim() || !password.trim()) {
+    const u = username.trim();
+    const p = password.trim();
+
+    if (!u || !p) {
       setError("Please enter both username and password.");
       return;
     }
@@ -30,34 +74,44 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // Example JSON Server auth (adjust base URL to your json-server port)
-      // NOTE: This is only for demo/class projects, not production security.
-      const res = await fetch(
-        `http://localhost:3001/users?username=${encodeURIComponent(
-          username
-        )}&password=${encodeURIComponent(password)}`
-      );
-      const users = await res.json();
+      // IMPORTANT: Keys must match your db.json (username/password here).
+      const url = `${API_BASE}/users?username=${encodeURIComponent(
+        u
+      )}&password=${encodeURIComponent(p)}`;
 
-      if (Array.isArray(users) && users.length === 1) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const users = (await res.json()) as Array<{
+        id: number | string;
+        username: string;
+      }>;
+
+      if (Array.isArray(users) && users.length >= 1) {
         const user = users[0];
 
-        // Simulate a session
+        // "Session"
         localStorage.setItem(
           "auth_user",
-          JSON.stringify({ id: user.id, username: user.username })
+          JSON.stringify({
+            id: user.id,
+            username: user.username,
+          } satisfies AuthUser)
         );
 
-        // Remember me
-        if (remember) localStorage.setItem("remember_username", username);
+        // Remember username if checked
+        if (remember) localStorage.setItem("remember_username", u);
         else localStorage.removeItem("remember_username");
 
-        nav("/dashboard"); // change to wherever you land post-login
+        nav("/home");
       } else {
         setError("Invalid username or password.");
       }
     } catch {
-      setError("Unable to reach the server. Is json-server running?");
+      setError(
+        
+        "Unable to reach the server. Is json-server running on the right port?"
+      );
     } finally {
       setLoading(false);
     }
@@ -67,6 +121,7 @@ export default function Login() {
     <div className="login">
       {/* Top bar */}
       <NavBar />
+
       {/* Main grid */}
       <main className="login__main">
         {/* Left: form */}
