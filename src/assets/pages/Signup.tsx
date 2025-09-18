@@ -28,8 +28,8 @@ export default function Signup() {
       setError("Please enter a valid email address.");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -46,7 +46,7 @@ export default function Signup() {
         return;
       }
 
-      // create user (username = email for simpler login)
+    
       const createRes = await fetch("http://localhost:3000/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,7 +64,6 @@ export default function Signup() {
         return;
       }
 
-      // redirect to home
       nav("/home");
     } catch {
       setError("Unable to reach the server. Is json-server running?");
@@ -75,11 +74,9 @@ export default function Signup() {
 
   return (
     <div className="signup">
-      {/* Top bar */}
      <NavBar />
 
       <main className="signup__main">
-        {/* Left: form */}
         <section className="signup__formwrap">
           <h1 className="signup__welcome">
             <span>Create Account</span>

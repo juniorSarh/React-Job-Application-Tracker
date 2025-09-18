@@ -4,12 +4,79 @@
 *::after { box-sizing: border-box; }
 
 /* ===== Page shells ===== */
-.landing, .login, .signup {
-  min-height: 100dvh;
+.landing, .login, .signup, .home {
+  height: 100dvh;
+  width: 100%;
   background: #ffffff;
   display: flex;
   flex-direction: column;
 }
+
+.home__topbar {
+  height: 64px;
+  background: #1e3a8a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.home__brand {
+  font-weight: bold;
+}
+
+.home__nav {
+  margin-left: 20px;
+}
+
+.home__navItem {
+  color: #fff;
+  margin-right: 16px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.home__navItem.active {
+  text-decoration: underline;
+}
+
+.home__searchWrap {
+  display: flex;
+  align-items: center;
+  background: #ddd;
+  border-radius: 20px;
+  padding: 0 8px;
+}
+
+.home__searchInput {
+  border: none;
+  background: transparent;
+  padding: 6px 8px;
+  outline: none;
+}
+
+.home__searchIcon {
+  color: #333;
+}
+
+.home__logoutBtn {
+  background: none;
+  border: none;
+  color: #fff;
+  margin-left: 16px;
+  cursor: pointer;
+}
+
+.home__content {
+  height: 100%;
+  padding: 24px;
+}
+.home__footer {
+  height: 35px;
+  background: #1e3a8a;
+}
+
 
 /* ===== Top bars & brand ===== */
 .landing__topbar, .login__topbar, .signup__topbar {
@@ -63,6 +130,9 @@
   gap: 36px;
   align-items: center;
 }
+
+
+
 
 /* ===== Landing copy & actions ===== */
 .landing__title {

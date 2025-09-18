@@ -41,8 +41,12 @@ export default function Home() {
       <main className="home__content">
         <h1>Welcome to Job App Tracker</h1>
         <p>This is your dashboard after login.</p>
+
+        <button>
+          Add a Job
+        </button>
       </main>
-      
+
       <footer className="home__footer" />
     </div>
   );
