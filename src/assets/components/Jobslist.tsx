@@ -262,9 +262,16 @@ export default function JobList() {
                   </td>
                   <td>{j.dateApplied}</td>
                   <td className="jobs__actions">
-                    <Link to={`/jobs/${j.id}/edit`} className="btn btn--sm">
+                    <Link
+                      to={`/jobpage?jobId=${j.id}`}
+                      className="btn btn-info btn-sm"
+                    >
+                      View details
+                    </Link>
+                    <Link to={`/jobs/${j.id}/jobform`} className="btn btn-warning">
                       Edit
                     </Link>
+
                     <button
                       className="btn btn--sm btn--danger"
                       onClick={() => handleDelete(j.id)}
