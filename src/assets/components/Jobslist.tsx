@@ -18,15 +18,15 @@ type GlobalWithCRA = typeof globalThis & {
 
 /** ===== API base (Vite or CRA, no "any") ===== */
 function getApiBase(): string {
-  const viteUrl: string | undefined =
-    (import.meta as ViteEnvMeta).env?.VITE_API_URL;
+  const viteUrl: string | undefined = (import.meta as ViteEnvMeta).env
+    ?.VITE_API_URL;
   if (viteUrl) return viteUrl;
 
-  const craUrl: string | undefined =
-    (globalThis as GlobalWithCRA).process?.env?.REACT_APP_API_URL;
+  const craUrl: string | undefined = (globalThis as GlobalWithCRA).process?.env
+    ?.REACT_APP_API_URL;
   if (craUrl) return craUrl;
 
-  return "http://localhost:3000";
+  return "https://json-server-vded.onrender.com";
 }
 const API_BASE = getApiBase();
 
@@ -35,9 +35,9 @@ const STATUS_OPTIONS = ["Applied", "Interviewed", "Rejected"] as const;
 type Status = (typeof STATUS_OPTIONS)[number];
 
 const statusColor: Record<Status, string> = {
-  Applied: "#fbbf24",      // yellow
-  Interviewed: "#10b981",  // green
-  Rejected: "#ef4444",     // red
+  Applied: "#fbbf24", // yellow
+  Interviewed: "#10b981", // green
+  Rejected: "#ef4444", // red
 };
 
 export default function JobList() {
@@ -56,6 +56,16 @@ export default function JobList() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Current logged-in user
+  const auth = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("auth_user") || "null");
+    } catch {
+      return null;
+    }
+  })();
+  const myId = auth?.id ?? null;
+
   // Build the json-server URL from params
   const listUrl = useMemo(() => {
     const p = new URLSearchParams();
@@ -64,6 +74,7 @@ export default function JobList() {
     // sort by dateApplied
     p.set("_sort", "dateApplied");
     p.set("_order", order);
+    if (myId) p.set("userId", String(myId));
     return `${API_BASE}/jobs?${p.toString()}`;
   }, [q, statusParam, order]);
 
@@ -71,6 +82,12 @@ export default function JobList() {
   useEffect(() => {
     const ctrl = new AbortController();
     async function run() {
+      if (!myId) {
+        setRows([]);
+        setError("Please log in to see your jobs.");
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
@@ -80,7 +97,9 @@ export default function JobList() {
         setRows(data);
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") return;
-        setError("Failed to load jobs. Is json-server running and /jobs available?");
+        setError(
+          "Failed to load jobs. Is json-server running and /jobs available?"
+        );
       } finally {
         setLoading(false);
       }
@@ -144,7 +163,9 @@ export default function JobList() {
               className="jobs__searchInput"
               aria-label="Search jobs"
             />
-            <button type="submit" className="btn btn--primary">Search</button>
+            <button type="submit" className="btn btn--primary">
+              Search
+            </button>
           </form>
 
           <select
@@ -155,7 +176,9 @@ export default function JobList() {
           >
             <option value="all">All statuses</option>
             {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
 
@@ -182,7 +205,9 @@ export default function JobList() {
         </div>
 
         <div className="jobs__right">
-          <Link to="/jobs/new" className="btn btn--primary">+ Add Job</Link>
+          <Link to="/jobform" className="btn btn--primary">
+            + Add Job
+          </Link>
         </div>
       </div>
 
@@ -201,41 +226,54 @@ export default function JobList() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={5} className="jobs__center">Loading…</td>
+                <td colSpan={5} className="jobs__center">
+                  Loading…
+                </td>
               </tr>
             )}
             {error && !loading && (
               <tr>
-                <td colSpan={5} className="jobs__error">{error}</td>
+                <td colSpan={5} className="jobs__error">
+                  {error}
+                </td>
               </tr>
             )}
             {!loading && !error && rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="jobs__center">No jobs found.</td>
+                <td colSpan={5} className="jobs__center">
+                  No jobs found.
+                </td>
               </tr>
             )}
-            {!loading && !error && rows.map((j) => (
-              <tr key={j.id}>
-                <td>{j.company}</td>
-                <td>{j.role}</td>
-                <td>
-                  <span
-                    className="jobs__statusPill"
-                    style={{ backgroundColor: statusColor[j.status] }}
-                    title={j.status}
-                  >
-                    {j.status}
-                  </span>
-                </td>
-                <td>{j.dateApplied}</td>
-                <td className="jobs__actions">
-                  <Link to={`/jobs/${j.id}/edit`} className="btn btn--sm">Edit</Link>
-                  <button className="btn btn--sm btn--danger" onClick={() => handleDelete(j.id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {!loading &&
+              !error &&
+              rows.map((j) => (
+                <tr key={j.id}>
+                  <td>{j.company}</td>
+                  <td>{j.role}</td>
+                  <td>
+                    <span
+                      className="jobs__statusPill"
+                      style={{ backgroundColor: statusColor[j.status] }}
+                      title={j.status}
+                    >
+                      {j.status}
+                    </span>
+                  </td>
+                  <td>{j.dateApplied}</td>
+                  <td className="jobs__actions">
+                    <Link to={`/jobs/${j.id}/edit`} className="btn btn--sm">
+                      Edit
+                    </Link>
+                    <button
+                      className="btn btn--sm btn--danger"
+                      onClick={() => handleDelete(j.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

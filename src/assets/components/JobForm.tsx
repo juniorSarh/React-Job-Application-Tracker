@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-// import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 type Job = {
   id?: number | string;
   company: string;
   role: string;
   status: "Applied" | "Interviewed" | "Rejected";
-  dateApplied: string; // ISO string yyyy-mm-dd
+  dateApplied: string; // ISO yyyy-mm-dd
   details?: string;
+  userId?: string | number;
 };
 
 type Props = {
@@ -16,19 +17,32 @@ type Props = {
   onCancel?: () => void; // optional cancel handler
 };
 
+type AuthUser = {
+  id: string | number;
+  username: string;
+  name?: string;
+};
+
+type NewJob = {
+  userId: string | number;
+  company: string;
+  role: string;
+  status: Job["status"];
+  dateApplied: string;
+  details: string;
+};
+
 /** Cross-stack env detection (Vite or CRA) with a safe fallback */
-function getApiBase() {
+function getApiBase(): string {
   try {
     type ViteEnvMeta = ImportMeta & { env?: { VITE_API_URL?: string } };
-
     const viteUrl: string | undefined = (import.meta as ViteEnvMeta).env
       ?.VITE_API_URL;
-
     if (viteUrl) return viteUrl;
   } catch {
-    // ignore — not running under Vite
+    /* not Vite – ignore */
   }
-  return "http://localhost:3000";
+  return "https://json-server-vded.onrender.com";
 }
 const API_BASE = getApiBase();
 
@@ -42,6 +56,8 @@ const statusColor: Record<Status, string> = {
 };
 
 export default function JobForm({ job, onSaved, onCancel }: Props) {
+  const nav = useNavigate();
+
   const [company, setCompany] = useState(job?.company ?? "");
   const [role, setRole] = useState(job?.role ?? "");
   const [status, setStatus] = useState<Status>(
@@ -51,6 +67,17 @@ export default function JobForm({ job, onSaved, onCancel }: Props) {
   const [details, setDetails] = useState(job?.details ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Current user (typed, no 'any')
+  const auth: AuthUser | null = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("auth_user");
+      return raw ? (JSON.parse(raw) as AuthUser) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const myId = auth?.id ?? null;
 
   // prefill today's date on create
   useEffect(() => {
@@ -63,9 +90,10 @@ export default function JobForm({ job, onSaved, onCancel }: Props) {
     }
   }, [job, dateApplied]);
 
-  const isEdit = useMemo(() => Boolean(job?.id), [job]);
+  const isEdit = Boolean(job?.id);
 
-  function validate() {
+  function validate(): string | null {
+    if (!myId) return "You must be logged in to add or edit jobs.";
     if (!company.trim()) return "Company name is required.";
     if (!role.trim()) return "Role is required.";
     if (!STATUS_OPTIONS.includes(status)) return "Status is invalid.";
@@ -83,43 +111,38 @@ export default function JobForm({ job, onSaved, onCancel }: Props) {
       return;
     }
 
-    const payload: Job = {
+    const payload: NewJob = {
+      userId: myId as string | number,
       company: company.trim(),
       role: role.trim(),
       status,
-      dateApplied, // already in yyyy-mm-dd
+      dateApplied, // yyyy-mm-dd
       details: details.trim() || "",
     };
 
     try {
       setSaving(true);
+
       const url = isEdit ? `${API_BASE}/jobs/${job!.id}` : `${API_BASE}/jobs`;
+      const method: "POST" | "PATCH" = isEdit ? "PATCH" : "POST";
+
       const res = await fetch(url, {
-        method: isEdit ? "PUT" : "POST",
+        method,
         headers: { "Content-Type": "application/json" },
+        // For PATCH, we still send payload fields (json-server will merge)
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const saved = (await res.json()) as Job;
       onSaved?.(saved);
 
-      // Optionally clear form on create
-      if (!isEdit) {
-        setCompany("");
-        setRole("");
-        setStatus("Applied");
-        setDetails("");
-        const d = new Date();
-        setDateApplied(
-          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-            2,
-            "0"
-          )}-${String(d.getDate()).padStart(2, "0")}`
-        );
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) console.error("Save job failed:", err.message);
+      // Navigate to Home to see the list (your Jobslist should filter by ?userId=<auth.id>)
+      nav("/home");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error("Save job failed:", msg);
       setError(
         "Could not save. Is json-server running and is /jobs available?"
       );

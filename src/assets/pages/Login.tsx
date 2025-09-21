@@ -6,7 +6,8 @@ import loginimg from "../images/loginimg.png";
 type AuthUser = { id: number | string; username: string };
 
 // Prefer env, fall back to localhost:3001 (keep React/Vite dev server on a different port)
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const API_BASE =
+  import.meta.env.VITE_API_URL ?? "https://json-server-vded.onrender.com";
 
 
 export default function Login() {

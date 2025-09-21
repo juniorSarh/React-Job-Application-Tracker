@@ -1,6 +1,6 @@
-import { useNavigate, Link } from "react-router-dom";
-import { FaSearch, FaSignOutAlt } from "react-icons/fa";
+import { FaSignOutAlt } from "react-icons/fa";
 import JobList from "../components/Jobslist";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const nav = useNavigate();
@@ -15,20 +15,11 @@ export default function Home() {
       <header className="home__topbar">
         <div className="home__brand">Job App Tracker</div>
 
-        <nav className="home__nav">
+        {/* <nav className="home__nav">
           <a href="/home" className="home__navItem active">
             Home
           </a>
-        </nav>
-
-        <div className="home__searchWrap">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="home__searchInput"
-          />
-          <FaSearch className="home__searchIcon" />
-        </div>
+        </nav> */}
 
         <button
           onClick={handleLogout}
@@ -41,13 +32,9 @@ export default function Home() {
 
       <main className="home__content">
         <h1>Welcome to Job App Tracker</h1>
-        <p>This is your dashboard after login.</p>
+        <p>This is your dashboard.</p>
 
-        <button>
-          {" "}
-          <Link to="/jobform"> Add a Job</Link>
-        </button>
-
+       
         <main className="home__content">
           <h1 className="home__h1">Jobs</h1>
           <JobList />
