@@ -268,7 +268,11 @@ export default function JobList() {
                     >
                       View details
                     </Link>
-                    <Link to={`/jobs/${j.id}/jobform`} className="btn btn-warning">
+                    <Link
+                      to={`/jobform/${j.id}`}
+                      state={{ job: j }} // pass row so the form can prefill instantly (no re-fetch flash)
+                      className="btn btn-warning"
+                    >
                       Edit
                     </Link>
 

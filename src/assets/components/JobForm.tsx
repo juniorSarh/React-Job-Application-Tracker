@@ -1,47 +1,30 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-type Job = {
+/** ===== Types (keep in sync with JobList) ===== */
+export type Job = {
   id?: number | string;
+  userId?: number | string;
   company: string;
   role: string;
   status: "Applied" | "Interviewed" | "Rejected";
-  dateApplied: string; // ISO yyyy-mm-dd
+  dateApplied: string; // yyyy-mm-dd
   details?: string;
-  userId?: string | number;
 };
 
-type Props = {
-  job?: Job; // pass to edit an existing job
-  onSaved?: (saved: Job) => void; // called after successful save
-  onCancel?: () => void; // optional cancel handler
+type ViteEnvMeta = ImportMeta & { env?: { VITE_API_URL?: string } };
+type GlobalWithCRA = typeof globalThis & {
+  process?: { env?: { REACT_APP_API_URL?: string } };
 };
 
-type AuthUser = {
-  id: string | number;
-  username: string;
-  name?: string;
-};
-
-type NewJob = {
-  userId: string | number;
-  company: string;
-  role: string;
-  status: Job["status"];
-  dateApplied: string;
-  details: string;
-};
-
-/** Cross-stack env detection (Vite or CRA) with a safe fallback */
+/** ===== API base (Vite or CRA, no "any") ===== */
 function getApiBase(): string {
-  try {
-    type ViteEnvMeta = ImportMeta & { env?: { VITE_API_URL?: string } };
-    const viteUrl: string | undefined = (import.meta as ViteEnvMeta).env
-      ?.VITE_API_URL;
-    if (viteUrl) return viteUrl;
-  } catch {
-    /* not Vite – ignore */
-  }
+  const viteUrl: string | undefined = (import.meta as ViteEnvMeta).env
+    ?.VITE_API_URL;
+  if (viteUrl) return viteUrl;
+  const craUrl: string | undefined = (globalThis as GlobalWithCRA).process?.env
+    ?.REACT_APP_API_URL;
+  if (craUrl) return craUrl;
   return "https://json-server-vded.onrender.com";
 }
 const API_BASE = getApiBase();
@@ -49,199 +32,214 @@ const API_BASE = getApiBase();
 const STATUS_OPTIONS = ["Applied", "Interviewed", "Rejected"] as const;
 type Status = (typeof STATUS_OPTIONS)[number];
 
-const statusColor: Record<Status, string> = {
-  Applied: "#fbbf24", // amber/yellow
-  Interviewed: "#10b981", // green
-  Rejected: "#ef4444", // red
-};
+type LocationState = { job?: Job } | null;
 
-export default function JobForm({ job, onSaved, onCancel }: Props) {
-  const nav = useNavigate();
+export default function JobForm() {
+  const { id } = useParams(); // if present => edit mode
+  const isEdit = Boolean(id);
+  const navigate = useNavigate();
+  const { state } = useLocation();
+  const passed = (state as LocationState)?.job;
 
-  const [company, setCompany] = useState(job?.company ?? "");
-  const [role, setRole] = useState(job?.role ?? "");
-  const [status, setStatus] = useState<Status>(
-    (job?.status as Status) ?? "Applied"
-  );
-  const [dateApplied, setDateApplied] = useState(job?.dateApplied ?? "");
-  const [details, setDetails] = useState(job?.details ?? "");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Current user (typed, no 'any')
-  const auth: AuthUser | null = useMemo(() => {
+  // current logged-in user (same pattern as JobList)
+  const auth = useMemo(() => {
     try {
-      const raw = localStorage.getItem("auth_user");
-      return raw ? (JSON.parse(raw) as AuthUser) : null;
+      return JSON.parse(localStorage.getItem("auth_user") || "null");
     } catch {
       return null;
     }
   }, []);
   const myId = auth?.id ?? null;
 
-  // prefill today's date on create
+  const [form, setForm] = useState<Job>(() => {
+    // Prefill instantly if we got the row via Link state
+    if (passed)
+      return {
+        id: passed.id,
+        userId: passed.userId ?? myId ?? undefined,
+        company: passed.company,
+        role: passed.role,
+        status: passed.status,
+        dateApplied: passed.dateApplied,
+        details: passed.details ?? "",
+      };
+    // Otherwise default blank (create) or await fetch (edit)
+    return {
+      company: "",
+      role: "",
+      status: "Applied",
+      dateApplied: new Date().toISOString().slice(0, 10),
+      details: "",
+    };
+  });
+
+  const [loading, setLoading] = useState(isEdit && !passed); // only fetch if editing without state
+  const [error, setError] = useState<string | null>(null);
+
+  // If editing and no state was passed, fetch the record
   useEffect(() => {
-    if (!job && !dateApplied) {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, "0");
-      const dd = String(today.getDate()).padStart(2, "0");
-      setDateApplied(`${yyyy}-${mm}-${dd}`);
+    const abort = new AbortController();
+    if (isEdit && !passed) {
+      setLoading(true);
+      (async () => {
+        try {
+          const res = await fetch(`${API_BASE}/jobs/${id}`, {
+            signal: abort.signal,
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = (await res.json()) as Job;
+          setForm({
+            id: data.id,
+            userId: data.userId ?? myId ?? undefined,
+            company: data.company ?? "",
+            role: data.role ?? "",
+            status: (STATUS_OPTIONS as readonly string[]).includes(
+              data.status as string
+            )
+              ? (data.status as Status)
+              : "Applied",
+            dateApplied:
+              data.dateApplied ?? new Date().toISOString().slice(0, 10),
+            details: data.details ?? "",
+          });
+        } catch (e) {
+          if ((e as Error).name !== "AbortError") {
+            setError("Failed to load job for editing.");
+          }
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
-  }, [job, dateApplied]);
+    return () => abort.abort();
+  }, [isEdit, id, passed, myId]);
 
-  const isEdit = Boolean(job?.id);
-
-  function validate(): string | null {
-    if (!myId) return "You must be logged in to add or edit jobs.";
-    if (!company.trim()) return "Company name is required.";
-    if (!role.trim()) return "Role is required.";
-    if (!STATUS_OPTIONS.includes(status)) return "Status is invalid.";
-    if (!dateApplied) return "Date applied is required.";
-    return null;
+  function onChange<K extends keyof Job>(key: K, value: Job[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
-    const v = validate();
-    if (v) {
-      setError(v);
+    if (!myId) {
+      setError("Please log in first.");
       return;
     }
 
-    const payload: NewJob = {
-      userId: myId as string | number,
-      company: company.trim(),
-      role: role.trim(),
-      status,
-      dateApplied, // yyyy-mm-dd
-      details: details.trim() || "",
-    };
+    const payload: Job = { ...form, userId: myId };
 
     try {
-      setSaving(true);
-
-      const url = isEdit ? `${API_BASE}/jobs/${job!.id}` : `${API_BASE}/jobs`;
-      const method: "POST" | "PATCH" = isEdit ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        // For PATCH, we still send payload fields (json-server will merge)
-        body: JSON.stringify(payload),
-      });
-
+      const res = await fetch(
+        isEdit ? `${API_BASE}/jobs/${id}` : `${API_BASE}/jobs`,
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const saved = (await res.json()) as Job;
-      onSaved?.(saved);
-
-      // Navigate to Home to see the list (your Jobslist should filter by ?userId=<auth.id>)
-      nav("/home");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      console.error("Save job failed:", msg);
+      // ✅ After save, go back to the list (change to your route as needed)
+      navigate("/jobpage", { replace: true });
+    } catch (e) {
       setError(
-        "Could not save. Is json-server running and is /jobs available?"
+        isEdit ? "Update failed. Try again." : "Create failed. Try again."
+        
       );
-    } finally {
-      setSaving(false);
+      console.error(e);
     }
   }
 
+  if (loading) return <div className="pageCenter">Loading form…</div>;
+
   return (
-    <form className="jobform" onSubmit={handleSubmit} noValidate>
-      <h2 className="jobform__title">{isEdit ? "Edit Job" : "Add Job"}</h2>
+    <section className="jobform">
+      <header className="jobform__header">
+        <h1 className="jobform__title">{isEdit ? "Edit Job" : "Add Job"}</h1>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={() => navigate(-1)} // ← Back to previous page
+        >
+          ← Back
+        </button>
+      </header>
 
-      <div className="jobform__grid">
-        <label>
-          Company<span className="req">*</span>
+      {error && <div className="alert alert--danger">{error}</div>}
+
+      <form onSubmit={onSubmit} className="jobform__form">
+        <div className="form__row">
+          <label htmlFor="company">Company</label>
           <input
-            type="text"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            placeholder="e.g., Acme Inc."
-            autoComplete="organization"
+            id="company"
+            value={form.company}
+            onChange={(e) => onChange("company", e.target.value)}
+            required
           />
-        </label>
+        </div>
 
-        <label>
-          Role<span className="req">*</span>
+        <div className="form__row">
+          <label htmlFor="role">Role</label>
           <input
-            type="text"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            placeholder="e.g., Frontend Engineer"
-            autoComplete="organization-title"
+            id="role"
+            value={form.role}
+            onChange={(e) => onChange("role", e.target.value)}
+            required
           />
-        </label>
+        </div>
 
-        <label>
-          Status<span className="req">*</span>
-          <div className="jobform__statusWrap">
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as Status)}
-            >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <span
-              className="jobform__statusDot"
-              style={{ backgroundColor: statusColor[status] }}
-              aria-hidden="true"
-              title={status}
-            />
-          </div>
-        </label>
+        <div className="form__row">
+          <label htmlFor="status">Status</label>
+          <select
+            id="status"
+            value={form.status}
+            onChange={(e) => onChange("status", e.target.value as Status)}
+            required
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <label>
-          Date applied<span className="req">*</span>
+        <div className="form__row">
+          <label htmlFor="dateApplied">Date applied</label>
           <input
+            id="dateApplied"
             type="date"
-            value={dateApplied}
-            onChange={(e) => setDateApplied(e.target.value)}
+            value={form.dateApplied}
+            onChange={(e) => onChange("dateApplied", e.target.value)}
+            required
           />
-        </label>
+        </div>
 
-        <label className="jobform__full">
-          Extra details
+        <div className="form__row">
+          <label htmlFor="details">Details</label>
           <textarea
+            id="details"
+            value={form.details ?? ""}
+            onChange={(e) => onChange("details", e.target.value)}
             rows={5}
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-            placeholder="requirements and e.t.c."
+            placeholder="Job duties, requirements, notes…"
           />
-        </label>
-      </div>
+        </div>
 
-      {error && (
-        <p className="jobform__error" role="alert">
-          {error}
-        </p>
-      )}
-
-      <div className="jobform__actions">
-        {onCancel && (
-          <button type="button" className="btn btn--ghost" onClick={onCancel}>
+        <div className="form__actions">
+          <button type="submit" className="btn btn--primary">
+            {isEdit ? "Save changes" : "Create job"}
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => navigate(-1)}
+          >
             Cancel
           </button>
-        )}
-        <button type="submit" className="btn btn--primary" disabled={saving}>
-          {saving
-            ? isEdit
-              ? "Saving..."
-              : "Adding..."
-            : isEdit
-            ? "Save"
-            : "Add Job"}
-        </button>
-      </div>
-    </form>
+        </div>
+      </form>
+    </section>
   );
 }

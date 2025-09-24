@@ -8,7 +8,7 @@ import Signup from "./assets/pages/Signup.tsx";
 import Home from "./assets/pages/Home.tsx"
 import JobPage from "./assets/pages/JobPage.tsx";
 import JobForm from "./assets/components/JobForm.tsx";
-import EditJob from "./assets/components/EditJob.tsx";
+
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/jobpage" element={<JobPage />} />
         <Route path="/jobform" element={<JobForm />} />
-        <Route path="/jobs/:id/edit" element={<EditJob />} />
+        <Route path="/jobform/:id" element={<JobForm />} />
         <Route path="*" element={<Error404 />} />
       </Routes>
     </>
