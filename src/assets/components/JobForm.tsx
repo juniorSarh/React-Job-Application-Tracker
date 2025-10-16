@@ -34,7 +34,12 @@ type Status = (typeof STATUS_OPTIONS)[number];
 
 type LocationState = { job?: Job } | null;
 
-export default function JobForm() {
+type Props = {
+  onSaved?: () => void;
+  onCancel?: () => void;
+};
+
+export default function JobForm({ onSaved, onCancel }: Props = {}) {
   const { id } = useParams(); // if present => edit mode
   const isEdit = Boolean(id);
   const navigate = useNavigate();
@@ -140,8 +145,12 @@ export default function JobForm() {
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // ✅ After save, go back to the list (change to your route as needed)
-      navigate("/jobpage", { replace: true });
+      // ✅ After save, use callback if provided, else default navigation
+      if (onSaved) {
+        onSaved();
+      } else {
+        navigate("/jobpage", { replace: true });
+      }
     } catch (e) {
       setError(
         isEdit ? "Update failed. Try again." : "Create failed. Try again."
@@ -160,7 +169,7 @@ export default function JobForm() {
         <button
           type="button"
           className="btn btn--ghost"
-          onClick={() => navigate(-1)} // ← Back to previous page
+          onClick={() => (onCancel ? onCancel() : navigate(-1))} // ← Back to previous page
         >
           ← Back
         </button>
@@ -234,7 +243,7 @@ export default function JobForm() {
           <button
             type="button"
             className="btn btn--ghost"
-            onClick={() => navigate(-1)}
+            onClick={() => (onCancel ? onCancel() : navigate(-1))}
           >
             Cancel
           </button>

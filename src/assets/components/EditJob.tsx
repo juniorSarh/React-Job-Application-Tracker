@@ -96,11 +96,7 @@ export default function EditJob({ jobId, onSaved, onCancel }: Props) {
 
       {job && !loading && !error && (
         <div className="page">
-          <JobForm
-            job={job}
-            onSaved={() => handleSaved()}
-            onCancel={() => handleCancel()}
-          />
+          <JobForm onSaved={handleSaved} onCancel={handleCancel} />
         </div>
       )}
     </section>

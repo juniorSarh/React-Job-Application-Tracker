@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import React from "react";
 import hero from "../images/LandingImage.png"; // <— hero image
 import NavBar from "../components/NavBar";
 

@@ -1,4 +1,4 @@
-import React from "react";
+
 import errorimg from "../images/error.png"
 
 export default function Error404() {
