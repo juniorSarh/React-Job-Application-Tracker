@@ -89,79 +89,85 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="login">
+      {/* Top bar */}
       <NavBar />
-      <main className="flex-1 grid md:grid-cols-2 gap-8 items-center px-6 py-10 max-w-5xl mx-auto">
-        <section className="order-2 md:order-1">
-          <h1 className="text-2xl font-semibold mb-4">Create your account</h1>
-          <p className="text-sm text-gray-600 mb-6">
-            Already have an account?{" "}
-            <Link to="/login" className="text-blue-600 underline">
-              Log in
-            </Link>
+
+      {/* Main grid (match Login layout) */}
+      <main className="login__main">
+        {/* Left: illustration */}
+        <section className="login__art" aria-hidden="true">
+          <div className="login__artCard">
+            {signup ? (
+              <img src={signup} alt="" />
+            ) : (
+              <div className="login__artFallback">📝</div>
+            )}
+          </div>
+        </section>
+
+        {/* Right: form */}
+        <section className="login__formwrap">
+          <h1 className="login__welcome">
+            <span>Get Started,</span>
+            <br />
+            <strong>Create your account</strong>
+          </h1>
+
+          <p className="login__hint">
+            Already have an account? <Link to="/login">Log in</Link>
           </p>
 
           {error && (
-            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <p className="login__error" role="alert">
               {error}
-            </div>
+            </p>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm mb-1">Full name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded border px-3 py-2"
-                placeholder="Jane Doe"
-                autoComplete="name"
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="login__form" noValidate>
+            <label htmlFor="name">Full name</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jane Doe"
+              autoComplete="name"
+            />
 
-            <div>
-              <label className="block text-sm mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded border px-3 py-2"
-                placeholder="jane@example.com"
-                autoComplete="email"
-              />
-            </div>
+            <label htmlFor="email" className="mt-12">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="jane@example.com"
+              autoComplete="email"
+            />
 
-            <div>
-              <label className="block text-sm mb-1">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded border px-3 py-2"
-                placeholder="At least 6 characters"
-                autoComplete="new-password"
-              />
-            </div>
+            <label htmlFor="password" className="mt-12">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              autoComplete="new-password"
+            />
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-60"
-            >
+            <button type="submit" className="btn btn--primary" disabled={loading}>
               {loading ? "Creating account..." : "Sign up"}
             </button>
           </form>
-        </section>
 
-        <section className="order-1 md:order-2 hidden md:block">
-          <img
-            src={signup}
-            alt="Sign up illustration"
-            className="w-full h-auto object-contain"
-          />
+          <p className="login__cta">
+            Have an account? <Link to="/login">Log in</Link>
+          </p>
         </section>
       </main>
+
+      {/* Bottom bar */}
+      <footer className="login__footer" />
     </div>
   );
 }

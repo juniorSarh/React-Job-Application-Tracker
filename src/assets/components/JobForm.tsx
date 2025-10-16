@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import NavBar from "./NavBar";
+import Footer from "./Footer";
 
 /** ===== Types (keep in sync with JobList) ===== */
 export type Job = {
@@ -163,7 +165,10 @@ export default function JobForm({ onSaved, onCancel }: Props = {}) {
   if (loading) return <div className="pageCenter">Loading form…</div>;
 
   return (
-    <section className="jobform">
+    <div className="jobformShell">
+      <NavBar />
+      <div className="jobformPage">
+        <section className="jobform">
       <header className="jobform__header">
         <h1 className="jobform__title">{isEdit ? "Edit Job" : "Add Job"}</h1>
         <button
@@ -248,7 +253,10 @@ export default function JobForm({ onSaved, onCancel }: Props = {}) {
             Cancel
           </button>
         </div>
-      </form>
-    </section>
+          </form>
+        </section>
+      </div>
+      <Footer />
+    </div>
   );
 }

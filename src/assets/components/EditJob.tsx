@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import JobForm from "./JobForm";
 import { API_BASE } from "../api";
+import Footer from "./Footer";
 
 type Status = "Applied" | "Interviewed" | "Rejected";
 
@@ -90,6 +91,7 @@ export default function EditJob({ jobId, onSaved, onCancel }: Props) {
     onCancel ?? (() => nav("/home", { replace: true }));
 
   return (
+    <>
     <section className="jobs" style={{ padding: 16 }}>
       {loading && <p className="jobs__center">Loading…</p>}
       {error && !loading && <p className="jobs__error">{error}</p>}
@@ -100,5 +102,7 @@ export default function EditJob({ jobId, onSaved, onCancel }: Props) {
         </div>
       )}
     </section>
+    <Footer/>
+    </>
   );
 }
