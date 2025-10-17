@@ -159,10 +159,6 @@ export default function Signup() {
               {loading ? "Creating account..." : "Sign up"}
             </button>
           </form>
-
-          <p className="login__cta">
-            Have an account? <Link to="/login">Log in</Link>
-          </p>
         </section>
       </main>
 

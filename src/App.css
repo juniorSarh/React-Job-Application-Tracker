@@ -198,9 +198,10 @@
 
 /* ===== Footers ===== */
 .landing__footer, .login__footer, .signup__footer {
-  height: 48px;
+  height: 76px;
   background: #1e3a8a;
 }
+
 
 /* ===== Auth forms (login + signup) ===== */
 .login__formwrap, .signup__formwrap { max-width: 520px; }
@@ -314,12 +315,12 @@
 
 /* Centering wrapper for JobForm route */
 .jobformShell { min-height: 100dvh; display: flex; flex-direction: column; }
-.jobformPage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; background: #f8fafc; }
+.jobformPage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; background: #f8fafc; margin:15px }
 
 /* Generic footer component support */
 .footer {
   margin-top: auto;
-  height: 56px;
+  height: 76px;
   background: #1e3a8a;
   color: #fff;
   display: flex;
