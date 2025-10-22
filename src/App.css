@@ -380,3 +380,20 @@
 .home__logoutBtn { background:none; border:none; color:#fff; cursor:pointer; }
 .home__h1 { margin: 12px 0 16px; }
 
+/* ===== Global responsive tweaks ===== */
+@media (max-width: 900px) {
+  .home__topbar { padding: 0 16px; }
+  .home__brand { font-size: 1rem; }
+
+  .jobs__toolbar { flex-direction: column; align-items: stretch; }
+  .jobs__left { width: 100%; }
+  .jobs__searchForm { width: 100%; }
+  .jobs__searchInput { min-width: 0; width: 100%; }
+  .jobs__right { width: 100%; display: flex; justify-content: flex-end; }
+}
+
+@media (max-width: 640px) {
+  .home__content { padding: 16px; }
+  .btn { height: 38px; padding: 0 14px; }
+  .jobs__table th, .jobs__table td { padding: 10px; }
+}
